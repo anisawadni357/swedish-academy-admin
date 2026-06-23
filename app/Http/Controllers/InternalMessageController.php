@@ -69,4 +69,23 @@ class InternalMessageController extends Controller
     {
         return $this->internalMessageService->downloadAttachment($filename);
     }
+
+    public function unreadSummary()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->internalMessageService->getUnreadSummary(),
+        ]);
+    }
+
+    public function markRead($id)
+    {
+        $updated = $this->internalMessageService->markMessageResponsesRead((int) $id);
+
+        return response()->json([
+            'success' => true,
+            'marked_read' => $updated,
+            'data' => $this->internalMessageService->getUnreadSummary(),
+        ]);
+    }
 }

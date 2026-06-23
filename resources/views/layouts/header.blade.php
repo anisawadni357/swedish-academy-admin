@@ -197,7 +197,7 @@
     <li class="nav-item {{ request()->routeIs('email-logs.*') ? 'active' : '' }}">
         <a class="d-flex align-items-center" href="{{ route('email-logs.index') }}" style="position: relative;">
             <i class="fa fa-list-alt"></i>
-            <span class="menu-title text-truncate" data-i18n="Email Logs">Email Logs</span>
+            <span class="menu-title text-truncate" data-i18n="Email Logs">Unified Email Log</span>
             @php
                 $failedEmails = \App\Models\EmailLog::where('status', 'failed')->where('created_at', '>=', now()->subDays(7))->count();
             @endphp

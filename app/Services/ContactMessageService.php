@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ContactMessage;
+use App\Services\OutboundEmailLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -64,16 +65,37 @@ class ContactMessageService
                 'responded_by' => Auth::id(),
             ]);
 
+            $subject = 'Re: ' . ($contactMessage->subject ?: 'Your Message to Swedish Academy');
+
             try {
                 Mail::send('emails.contact-response', [
                     'contactMessage' => $contactMessage,
                     'response' => $request->response,
-                ], function ($message) use ($contactMessage) {
+                ], function ($message) use ($contactMessage, $subject) {
                     $message->to($contactMessage->email, $contactMessage->name)
-                        ->subject('Re: ' . ($contactMessage->subject ?: 'Your Message to Swedish Academy'));
+                        ->subject($subject);
                 });
+
+                OutboundEmailLogger::logSent(
+                    $contactMessage->email,
+                    'contact_response',
+                    $subject,
+                    relatedModel: 'ContactMessage',
+                    relatedId: $contactMessage->id,
+                    body: $request->response
+                );
             } catch (\Exception $e) {
                 Log::error('Failed to send contact response email: ' . $e->getMessage());
+
+                OutboundEmailLogger::logFailed(
+                    $contactMessage->email,
+                    'contact_response',
+                    $subject,
+                    $e->getMessage(),
+                    relatedModel: 'ContactMessage',
+                    relatedId: $contactMessage->id,
+                    body: $request->response
+                );
 
                 if ($request->ajax()) {
                     return response()->json([

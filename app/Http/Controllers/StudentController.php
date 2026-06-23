@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\EmailLog;
 use App\Models\CustomerPoint;
-use App\Models\PointsTransaction;
 use App\Models\BlockStudentCourse;
 use App\Models\Order;
 use App\Models\Product;
@@ -224,6 +224,8 @@ public function test()
         $blockableCourseIds = $enrolledCourseIds->diff($blockedCourses->pluck('course_id'))->values();
         $blockableCourses = BlockStudentCourse::mapCoursesForBlock($blockableCourseIds);
 
+        $emailLogs = EmailLog::forStudent($student->id, $student->email);
+
         return view('students.show', compact(
             'student',
             'enrolledCourses',
@@ -235,7 +237,8 @@ public function test()
             'pointsUsageOrders',
             'blockedCourses',
             'blockedCourseIds',
-            'blockableCourses'
+            'blockableCourses',
+            'emailLogs'
         ));
     }
 

@@ -39,6 +39,7 @@ class EmailService
         return view('emails.send', [
             'mailDriver' => config('mail.default', 'log'),
             'mailDeliversExternally' => $this->mailDeliversExternally(),
+            'prefillEmail' => request('email'),
         ]);
     }
 

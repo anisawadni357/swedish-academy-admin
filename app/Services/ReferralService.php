@@ -471,14 +471,37 @@ class ReferralService
             );
 
             if (!empty($referrer->email)) {
-                Mail::to($referrer->email)->send(new ReferralNotificationEmail(
-                    recipientName: trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')) ?: 'there',
-                    emailSubject: $title,
-                    heading: 'Your referral just signed up!',
-                    body: "{$referredName} joined Swedish Academy using your referral link.\n\nYou'll earn \$" . number_format(self::REFERRER_REWARD_AMOUNT, 2) . ' as soon as they complete their first purchase.',
-                    ctaUrl: $referralsUrl,
-                    ctaLabel: 'View my referrals',
-                ));
+                try {
+                    Mail::to($referrer->email)->send(new ReferralNotificationEmail(
+                        recipientName: trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')) ?: 'there',
+                        emailSubject: $title,
+                        heading: 'Your referral just signed up!',
+                        body: "{$referredName} joined Swedish Academy using your referral link.\n\nYou'll earn \$" . number_format(self::REFERRER_REWARD_AMOUNT, 2) . ' as soon as they complete their first purchase.',
+                        ctaUrl: $referralsUrl,
+                        ctaLabel: 'View my referrals',
+                    ));
+
+                    OutboundEmailLogger::logSent(
+                        $referrer->email,
+                        'referral_signup',
+                        $title,
+                        $referrer->id,
+                        trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')),
+                        'Referral',
+                        $referral->id
+                    );
+                } catch (\Exception $e) {
+                    OutboundEmailLogger::logFailed(
+                        $referrer->email,
+                        'referral_signup',
+                        $title,
+                        $e->getMessage(),
+                        $referrer->id,
+                        trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')),
+                        'Referral',
+                        $referral->id
+                    );
+                }
             }
         } catch (\Exception $e) {
             Log::error('Referral signup notification failed: ' . $e->getMessage());
@@ -535,14 +558,37 @@ class ReferralService
                 );
 
                 if (!empty($referrer->email)) {
-                    Mail::to($referrer->email)->send(new ReferralNotificationEmail(
-                        recipientName: trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')) ?: 'there',
-                        emailSubject: $title,
-                        heading: 'Your referral reward is ready!',
-                        body: "{$referredName} just completed their first purchase using your referral.\n\nYou've earned a \${$amount} {$typeLabel}. Head to your referrals dashboard to view or claim it.",
-                        ctaUrl: $referralsUrl,
-                        ctaLabel: 'View my reward',
-                    ));
+                    try {
+                        Mail::to($referrer->email)->send(new ReferralNotificationEmail(
+                            recipientName: trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')) ?: 'there',
+                            emailSubject: $title,
+                            heading: 'Your referral reward is ready!',
+                            body: "{$referredName} just completed their first purchase using your referral.\n\nYou've earned a \${$amount} {$typeLabel}. Head to your referrals dashboard to view or claim it.",
+                            ctaUrl: $referralsUrl,
+                            ctaLabel: 'View my reward',
+                        ));
+
+                        OutboundEmailLogger::logSent(
+                            $referrer->email,
+                            'referral_reward_earned',
+                            $title,
+                            $referrer->id,
+                            trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')),
+                            'Referral',
+                            $referral->id
+                        );
+                    } catch (\Exception $e) {
+                        OutboundEmailLogger::logFailed(
+                            $referrer->email,
+                            'referral_reward_earned',
+                            $title,
+                            $e->getMessage(),
+                            $referrer->id,
+                            trim(($referrer->first_name ?? '') . ' ' . ($referrer->last_name ?? '')),
+                            'Referral',
+                            $referral->id
+                        );
+                    }
                 }
             }
 
@@ -565,14 +611,37 @@ class ReferralService
                     false
                 );
 
-                Mail::to($referred->email)->send(new ReferralNotificationEmail(
-                    recipientName: trim(($referred->first_name ?? '') . ' ' . ($referred->last_name ?? '')) ?: 'there',
-                    emailSubject: $referredTitle,
-                    heading: 'Welcome — your discount is in!',
-                    body: "Thanks for joining Swedish Academy through a referral.\n\nYour 5% discount was automatically applied to your first order. You can also invite friends from your dashboard and earn rewards.",
-                    ctaUrl: $referralsUrl,
-                    ctaLabel: 'Invite friends',
-                ));
+                try {
+                    Mail::to($referred->email)->send(new ReferralNotificationEmail(
+                        recipientName: trim(($referred->first_name ?? '') . ' ' . ($referred->last_name ?? '')) ?: 'there',
+                        emailSubject: $referredTitle,
+                        heading: 'Welcome — your discount is in!',
+                        body: "Thanks for joining Swedish Academy through a referral.\n\nYour 5% discount was automatically applied to your first order. You can also invite friends from your dashboard and earn rewards.",
+                        ctaUrl: $referralsUrl,
+                        ctaLabel: 'Invite friends',
+                    ));
+
+                    OutboundEmailLogger::logSent(
+                        $referred->email,
+                        'referral_discount_applied',
+                        $referredTitle,
+                        $referred->id,
+                        trim(($referred->first_name ?? '') . ' ' . ($referred->last_name ?? '')),
+                        'Referral',
+                        $referral->id
+                    );
+                } catch (\Exception $e) {
+                    OutboundEmailLogger::logFailed(
+                        $referred->email,
+                        'referral_discount_applied',
+                        $referredTitle,
+                        $e->getMessage(),
+                        $referred->id,
+                        trim(($referred->first_name ?? '') . ' ' . ($referred->last_name ?? '')),
+                        'Referral',
+                        $referral->id
+                    );
+                }
             }
         } catch (\Exception $e) {
             Log::error('Referral completion notification failed: ' . $e->getMessage());

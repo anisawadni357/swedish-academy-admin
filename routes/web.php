@@ -156,7 +156,9 @@ Route::get('/internal-messages', [InternalMessageController::class, 'index'])->n
 Route::get('/internal-messages/create', [InternalMessageController::class, 'create'])->name('internal-messages.create');
 Route::post('/internal-messages', [InternalMessageController::class, 'store'])->name('internal-messages.store');
 Route::get('/internal-messages/download/{filename}', [InternalMessageController::class, 'downloadAttachment'])->name('internal-messages.download')->where('filename', '.*');
-Route::get('/internal-messages/{id}', [InternalMessageController::class, 'show'])->name('internal-messages.show');
+Route::get('/internal-messages/api/unread-summary', [InternalMessageController::class, 'unreadSummary'])->name('internal-messages.unread-summary');
+Route::post('/internal-messages/{id}/mark-read', [InternalMessageController::class, 'markRead'])->name('internal-messages.mark-read');
+Route::get('/internal-messages/{id}', [InternalMessageController::class, 'show'])->name('internal-messages.show')->whereNumber('id');
 Route::post('/internal-messages/response/{responseId}', [InternalMessageController::class, 'storeAdminResponse'])->name('internal-messages.respond');
 Route::get('/api/search-students', [InternalMessageController::class, 'searchStudents'])->name('api.search-students');
 

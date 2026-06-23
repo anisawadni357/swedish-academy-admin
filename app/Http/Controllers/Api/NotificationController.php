@@ -143,15 +143,10 @@ class NotificationController extends Controller
             ->pluck('count', 'type')
             ->toArray();
 
-        // Add count for unread student message responses
-        // Count message responses that don't have any admin responses yet
-        $studentResponseCount = DB::table('message_responses as mr')
-            ->join('internal_messages as im', 'mr.message_id', '=', 'im.id')
-            ->leftJoin('admin_responses as ar', 'mr.id', '=', 'ar.message_response_id')
-            ->where('im.sender_admin_id', $user->id)
-            ->whereNull('ar.id') // No admin response yet
-            ->distinct()
-            ->count('mr.id');
+        // Add count for unread student message responses (not yet opened by admin)
+        $studentResponseCount = DB::table('message_responses')
+            ->where('is_read_by_admin', false)
+            ->count();
 
         $counts['student_message_response'] = $studentResponseCount;
 

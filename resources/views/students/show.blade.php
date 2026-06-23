@@ -167,7 +167,7 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <a href="mailto:{{ $student->email }}" class="btn btn-outline-primary">
+                                <a href="{{ route('emails.index', ['email' => $student->email]) }}" class="btn btn-outline-primary">
                                     <i data-feather="mail" class="me-2"></i>
                                     Send Email
                                 </a>
@@ -744,6 +744,8 @@
                             </div>
                         </div>
                     </div>
+
+                    @include('students.partials.email-history')
                 </div>
             </div>
         </div>

@@ -14,13 +14,24 @@
                                 </div>
                             </div>
                             <div>
-                                <h1 class="page-title mb-0">Email Delivery Logs</h1>
-                                <small class="text-muted">All outbound emails—including <strong>Send Email</strong>—are listed here with full body for custom messages. Open detection uses an image pixel when the recipient loads images.</small>
+                                <h1 class="page-title mb-0">Unified Email Log</h1>
+                                <small class="text-muted">Complete audit trail of all outbound emails to students — manual admin messages, welcome emails, password resets, payment reminders, birthday greetings, and every other automated notification.</small>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
+
+                    @if(!empty($filteredStudent))
+                        <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+                            <span>
+                                Showing email history for
+                                <strong>{{ $filteredStudent->first_name }} {{ $filteredStudent->last_name }}</strong>
+                                ({{ $filteredStudent->email }})
+                            </span>
+                            <a href="{{ route('students.show', $filteredStudent) }}" class="btn btn-sm btn-outline-primary">Student profile</a>
+                        </div>
+                    @endif
 
                     {{-- Statistics Cards --}}
                     <div class="row mb-4">
@@ -144,7 +155,7 @@
                                     <h4 class="card-title mb-0 text-white">Email Log</h4>
                                     <span class="badge bg-light text-dark ms-2">{{ $logs->total() }} records</span>
                                 </div>
-                                @if(request()->hasAny(['search', 'type', 'status', 'read_status', 'date_from', 'date_to']))
+                                @if(request()->hasAny(['search', 'type', 'status', 'read_status', 'date_from', 'date_to', 'student_id']))
                                     <a href="{{ route('email-logs.index') }}" class="btn btn-sm btn-outline-light">
                                         <i data-feather="x" style="width:14px;height:14px;" class="me-1"></i>Clear Filters
                                     </a>

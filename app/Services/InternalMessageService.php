@@ -23,10 +23,16 @@ class InternalMessageService
     public function index()
     {
         $messages = InternalMessage::with('recipients')
+            ->withCount([
+                'responses as unread_responses_count' => fn ($q) => $q->where('is_read_by_admin', false),
+                'responses as total_responses_count',
+            ])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('internal-messages.index', compact('messages'));
+        $totalUnreadResponses = MessageResponse::where('is_read_by_admin', false)->count();
+
+        return view('internal-messages.index', compact('messages', 'totalUnreadResponses'));
     }
 
     public function create()
@@ -159,6 +165,8 @@ class InternalMessageService
         $message = InternalMessage::with(['recipients.student'])->findOrFail($id);
         $recipients = $message->recipients;
 
+        MessageResponse::markAllAsReadByAdminForMessage((int) $message->id);
+
         return view('internal-messages.show', compact('message', 'recipients'));
     }
 
@@ -207,6 +215,8 @@ class InternalMessageService
                 'response_attachments' => $attachmentPaths
             ]);
 
+            $subject = 'Admin Response: ' . $studentResponse->message->subject;
+
             try {
                 $locale = app()->getLocale();
                 $locale = in_array($locale, ['en', 'ar', 'fr'], true) ? $locale : 'en';
@@ -217,12 +227,35 @@ class InternalMessageService
                     'adminResponseBody' => $request->response_body,
                     'messageId' => $studentResponse->message->id,
                     'conversationUrl' => StudentFrontendUrl::localized($locale, 'student-dashboard/messages/' . $studentResponse->message->id),
-                ], function ($mail) use ($studentResponse) {
+                ], function ($mail) use ($studentResponse, $subject) {
                     $mail->to($studentResponse->student->email)
-                        ->subject('Admin Response: ' . $studentResponse->message->subject);
+                        ->subject($subject);
                 });
+
+                OutboundEmailLogger::logSent(
+                    $studentResponse->student->email,
+                    'internal_message_reply',
+                    $subject,
+                    $studentResponse->student->id,
+                    $studentResponse->student->first_name . ' ' . $studentResponse->student->last_name,
+                    'InternalMessage',
+                    $studentResponse->message->id,
+                    $request->response_body
+                );
             } catch (\Exception $e) {
                 Log::error('Failed to send notification to student: ' . $e->getMessage());
+
+                OutboundEmailLogger::logFailed(
+                    $studentResponse->student->email,
+                    'internal_message_reply',
+                    $subject,
+                    $e->getMessage(),
+                    $studentResponse->student->id,
+                    $studentResponse->student->first_name . ' ' . $studentResponse->student->last_name,
+                    'InternalMessage',
+                    $studentResponse->message->id,
+                    $request->response_body
+                );
             }
 
             return redirect()->back()->with('success', 'Response sent successfully to student!');
@@ -241,5 +274,33 @@ class InternalMessageService
         }
 
         return response()->download(Storage::disk('public')->path($path));
+    }
+
+    public function getUnreadSummary(): array
+    {
+        $messages = InternalMessage::query()
+            ->withCount([
+                'responses as unread_responses_count' => fn ($q) => $q->where('is_read_by_admin', false),
+            ])
+            ->having('unread_responses_count', '>', 0)
+            ->orderByDesc('created_at')
+            ->get(['id', 'subject', 'created_at']);
+
+        return [
+            'total_unread_responses' => MessageResponse::where('is_read_by_admin', false)->count(),
+            'messages' => $messages->map(fn ($m) => [
+                'id' => $m->id,
+                'subject' => $m->subject,
+                'unread_responses_count' => $m->unread_responses_count,
+                'created_at' => $m->created_at?->toIso8601String(),
+            ])->values()->all(),
+        ];
+    }
+
+    public function markMessageResponsesRead(int $messageId): int
+    {
+        InternalMessage::findOrFail($messageId);
+
+        return MessageResponse::markAllAsReadByAdminForMessage($messageId);
     }
 }

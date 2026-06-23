@@ -112,7 +112,7 @@
         <p>If you have any further questions, please don't hesitate to contact us again.</p>
 
         <div style="text-align: center;">
-            <a href="{{ env('APP_URL', 'https://swedish-academy.se') }}" class="btn">
+            <a href="{{ \App\Support\StudentFrontendUrl::localized('en', '') }}" class="btn">
                 Visit Our Website
             </a>
         </div>

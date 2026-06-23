@@ -96,9 +96,12 @@
                             @foreach($studentResponses as $response)
                                 <!-- Student Response -->
                                 <div class="mb-3">
-                                    <div class="card border-primary">
-                                        <div class="card-header bg-primary bg-opacity-10">
+                                    <div class="card border-primary {{ !$response->is_read_by_admin ? 'border-danger shadow-sm' : '' }}">
+                                        <div class="card-header {{ !$response->is_read_by_admin ? 'bg-danger bg-opacity-10' : 'bg-primary bg-opacity-10' }}">
                                             <small class="text-muted">
+                                                @if(!$response->is_read_by_admin)
+                                                    <span class="badge bg-danger me-1">New</span>
+                                                @endif
                                                 <i class="fas fa-user"></i> <strong>Student Response</strong>
                                                 <span class="float-end">
                                                     <i class="far fa-clock"></i>

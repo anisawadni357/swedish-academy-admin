@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Student;
 use App\Mail\BirthdayGreeting;
+use App\Services\OutboundEmailLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -52,6 +53,14 @@ class SendBirthdayGreetings extends Command
                 // Send birthday greeting email with random card variant
                 Mail::to($student->email)->send(new BirthdayGreeting($student));
 
+                OutboundEmailLogger::logSent(
+                    $student->email,
+                    'birthday_greeting',
+                    'Happy Birthday from Swedish Academy!',
+                    $student->id,
+                    $student->name
+                );
+
                 $sentCount++;
                 $this->info("Birthday greeting sent to: {$student->name} ({$student->email})");
 
@@ -63,6 +72,16 @@ class SendBirthdayGreetings extends Command
 
             } catch (\Exception $e) {
                 $failedCount++;
+
+                OutboundEmailLogger::logFailed(
+                    $student->email,
+                    'birthday_greeting',
+                    'Happy Birthday from Swedish Academy!',
+                    $e->getMessage(),
+                    $student->id,
+                    $student->name
+                );
+
                 $this->error("Failed to send birthday greeting to: {$student->name} ({$student->email})");
 
                 Log::error("Failed to send birthday greeting", [

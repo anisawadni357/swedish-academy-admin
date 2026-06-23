@@ -79,7 +79,7 @@
                                     <i data-feather="mail" class="me-1"></i>Email du destinataire
                                 </label>
                                 <input type="email" id="email" class="form-control" name="email" 
-                                       placeholder="exemple@email.com" value="{{ old('email') }}" required>
+                                       placeholder="exemple@email.com" value="{{ old('email', $prefillEmail ?? '') }}" required>
                                 <div class="form-text">L'email sera envoyé à cette adresse</div>
                             </div>
                             

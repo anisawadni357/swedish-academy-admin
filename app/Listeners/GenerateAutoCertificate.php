@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\StudentSuccessApproved;
 use App\Services\CertificateGeneratorService;
+use App\Services\OutboundEmailLogger;
 use App\Mail\CertificateGeneratedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -64,11 +65,32 @@ class GenerateAutoCertificate implements ShouldQueue
                         Mail::to($studentSuccess->student->email)
                             ->send(new CertificateGeneratedNotification($certificate, $studentSuccess));
 
+                        OutboundEmailLogger::logSent(
+                            $studentSuccess->student->email,
+                            'certificate_generated',
+                            'Your Certificate is Ready',
+                            $studentSuccess->student_id,
+                            $studentSuccess->student->first_name . ' ' . $studentSuccess->student->last_name,
+                            'Certificate',
+                            $certificate->id
+                        );
+
                         Log::info('Certificate notification email sent', [
                             'student_email' => $studentSuccess->student->email,
                             'certificate_id' => $certificate->id
                         ]);
                     } catch (\Exception $emailError) {
+                        OutboundEmailLogger::logFailed(
+                            $studentSuccess->student->email,
+                            'certificate_generated',
+                            'Your Certificate is Ready',
+                            $emailError->getMessage(),
+                            $studentSuccess->student_id,
+                            $studentSuccess->student->first_name . ' ' . $studentSuccess->student->last_name,
+                            'Certificate',
+                            $certificate->id ?? null
+                        );
+
                         Log::error('Failed to send certificate notification email', [
                             'error' => $emailError->getMessage(),
                             'student_email' => $studentSuccess->student->email

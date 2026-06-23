@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EmailLog;
+use App\Models\Student;
 use Illuminate\Http\Request;
 
 class EmailLogService
@@ -10,6 +11,19 @@ class EmailLogService
     public function index(Request $request)
     {
         $query = EmailLog::query()->latest();
+
+        $filteredStudent = null;
+
+        if ($studentId = $request->get('student_id')) {
+            $filteredStudent = Student::find($studentId);
+
+            if ($filteredStudent) {
+                $query->where(function ($q) use ($filteredStudent) {
+                    $q->where('student_id', $filteredStudent->id)
+                        ->orWhere('student_email', $filteredStudent->email);
+                });
+            }
+        }
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -62,6 +76,6 @@ class EmailLogService
             'today' => EmailLog::whereDate('created_at', today())->count(),
         ];
 
-        return view('email-logs.index', compact('logs', 'emailTypes', 'stats'));
+        return view('email-logs.index', compact('logs', 'emailTypes', 'stats', 'filteredStudent'));
     }
 }

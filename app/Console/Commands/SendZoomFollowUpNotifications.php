@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ZoomMeeting;
 use App\Mail\ZoomMeetingFollowUp;
+use App\Services\OutboundEmailLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -67,13 +68,35 @@ class SendZoomFollowUpNotifications extends Command
 
             foreach ($students as $student) {
                 try {
-                    // Send follow-up email
                     Mail::to($student->email)->send(new ZoomMeetingFollowUp($meeting, $student));
+
+                    OutboundEmailLogger::logSent(
+                        $student->email,
+                        'zoom_meeting_followup',
+                        'Follow-up: ' . $meeting->topic,
+                        $student->id,
+                        trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                        'ZoomMeeting',
+                        $meeting->id
+                    );
+
                     $sentCount++;
                     $this->info("Follow-up email sent to: {$student->email} for meeting: {$meeting->topic}");
 
                 } catch (\Exception $e) {
                     $failedCount++;
+
+                    OutboundEmailLogger::logFailed(
+                        $student->email,
+                        'zoom_meeting_followup',
+                        'Follow-up: ' . $meeting->topic,
+                        $e->getMessage(),
+                        $student->id,
+                        trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                        'ZoomMeeting',
+                        $meeting->id
+                    );
+
                     $this->error("Failed to send follow-up email to: {$student->email}");
                     Log::error("Zoom follow-up email failed for student {$student->id}: " . $e->getMessage());
                 }

@@ -48,6 +48,21 @@ class EmailLog extends Model
     }
 
     /**
+     * All logs for a student (by id or email address).
+     */
+    public static function forStudent(int $studentId, string $email, int $limit = 25)
+    {
+        return self::query()
+            ->where(function ($q) use ($studentId, $email) {
+                $q->where('student_id', $studentId)
+                    ->orWhere('student_email', $email);
+            })
+            ->latest()
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
      * Log a sent email.
      */
     public static function logSent(
@@ -136,6 +151,7 @@ class EmailLog extends Model
             'account_blocked' => 'Account Blocked',
             'custom_email' => 'Custom Email',
             'password_reset' => 'Password Reset',
+            'password_changed' => 'Password Changed Confirmation',
             'welcome' => 'Welcome Email',
             'course_expiration' => 'Course Expiration Reminder',
             'course_expired' => 'Course Expired',
@@ -150,6 +166,12 @@ class EmailLog extends Model
             'student_success_rejected' => 'Student Success Rejected',
             'partnership_response' => 'Partnership Response',
             'internal_message' => 'Internal Message',
+            'internal_message_reply' => 'Internal Message Reply',
+            'contact_response' => 'Contact Form Response',
+            'referral_signup' => 'Referral — Friend Signed Up',
+            'referral_reward_earned' => 'Referral — Reward Earned',
+            'referral_discount_applied' => 'Referral — Discount Applied',
+            'zoom_meeting_followup' => 'Zoom Meeting — Follow-up',
             'scheduled_task_test' => 'Scheduled Task (Test)',
             'course_extension_approved' => 'Course Extension Approved',
             'course_extension_rejected' => 'Course Extension Disapproved',

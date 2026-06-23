@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\StudentSuccess;
 use App\Models\Product;
 use App\Services\CertificateGeneratorService;
+use App\Services\OutboundEmailLogger;
 use App\Mail\CertificateGeneratedNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -75,6 +76,16 @@ class GenerateAutomaticCertificates extends Command
                 if ($studentSuccess->student && $studentSuccess->student->email) {
                     Mail::to($studentSuccess->student->email)->send(
                         new CertificateGeneratedNotification($certificate, $studentSuccess)
+                    );
+
+                    OutboundEmailLogger::logSent(
+                        $studentSuccess->student->email,
+                        'certificate_generated',
+                        'Your Certificate is Ready',
+                        $studentSuccess->student_id,
+                        $studentSuccess->student->first_name . ' ' . $studentSuccess->student->last_name,
+                        'Certificate',
+                        $certificate->id
                     );
 
                     $this->info("Certificate email sent to {$studentSuccess->student->email}");

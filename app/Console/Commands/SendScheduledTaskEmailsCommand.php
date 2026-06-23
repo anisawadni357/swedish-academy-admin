@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\TachePlanifie;
 use App\Models\Student;
 use App\Models\Product;
+use App\Services\OutboundEmailLogger;
 use Carbon\Carbon;
 
 class SendScheduledTaskEmailsCommand extends Command
@@ -149,12 +150,33 @@ class SendScheduledTaskEmailsCommand extends Command
                 $message->from('no-reply@swedish-academy.se', 'Swedish Academy');
             });
 
+            OutboundEmailLogger::logSent(
+                $to_email,
+                'scheduled_task',
+                $subject,
+                $task->student->id,
+                $to_name,
+                'TachePlanifie',
+                $task->id
+            );
+
             // Marquer la tâche comme envoyée
             $task->markAsSent();
 
             Log::info("Email sent to {$to_email} for task {$task->id} ({$timing})");
 
         } catch (\Exception $e) {
+            OutboundEmailLogger::logFailed(
+                $task->student->email ?? '',
+                'scheduled_task',
+                $subject ?? 'Scheduled Task Reminder',
+                $e->getMessage(),
+                $task->student->id ?? null,
+                ($task->student->first_name ?? '') . ' ' . ($task->student->last_name ?? ''),
+                'TachePlanifie',
+                $task->id
+            );
+
             Log::error("Failed to send email for task {$task->id}: " . $e->getMessage());
             $this->error("Failed to send email for task {$task->id}: " . $e->getMessage());
         }
